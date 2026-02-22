@@ -4,7 +4,7 @@
         "builder": "NIXPACKS"
     },
     "deploy": {
-        "startCommand": "npx prisma generate --schema=backend/prisma/schema.prisma && npx prisma migrate deploy --schema=backend/prisma/schema.prisma && npm start --prefix backend",
+        "startCommand": "cd backend && npm run build && npm run migrate:prod && npm start",
         "restartPolicyType": "ON_FAILURE"
     }
 }
