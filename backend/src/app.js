@@ -1,0 +1,51 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const path = require('path');
+
+// Routes
+const authRoutes = require('./routes/auth.routes');
+const bancadaRoutes = require('./routes/bancada.routes');
+const securityRoutes = require('./routes/security.routes');
+const governanceRoutes = require('./routes/governance.routes');
+const infraRoutes = require('./routes/infra.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+
+const app = express();
+
+// Security Middlewares
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api/', limiter);
+
+// Static files for uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/bancada', bancadaRoutes);
+app.use('/api/security', securityRoutes);
+app.use('/api/governance', governanceRoutes);
+app.use('/api/infra', infraRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
+  });
+});
+
+module.exports = app;

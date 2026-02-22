@@ -1,0 +1,10 @@
+node_modules/
+.env
+dist/
+dist-electron/
+*.log
+.vscode/
+package-lock.json
+build/
+bin/
+obj/

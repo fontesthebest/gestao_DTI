@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  COORDINATOR
+  TECHNICIAN
+  AUDITOR
+}
+
+enum OSStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_PARTS
+  FINISHED
+}
+
+enum ServerStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+}
+
+enum IncidentCriticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(TECHNICIAN)
+  team      String?  // Bancada, Seguranca, Governanca, Infra
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  serviceOrders TechnicianSO[]
+  incidents      SecurityIncident[] @relation("AnalysisResponsible")
+  contracts      Contract[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+}
+
+// --- Módulo: Equipe de Bancada ---
+model Equipment {
+  id              String         @id @default(uuid())
+  patrimony       String         @unique
+  userResponsible String
+  type            String
+  status          String
+  warrantyUntil   DateTime?
+  serviceOrders   ServiceOrder[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  images          EquipmentImage[]
+}
+
+model EquipmentImage {
+  id          String    @id @default(uuid())
+  url         String
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+}
+
+model ServiceOrder {
+  id                String    @id @default(uuid())
+  equipmentId       String
+  equipment         Equipment @relation(fields: [equipmentId], references: [id])
+  reportedDefect    String
+  technicalDiagnosis String?
+  appliedSolution   String?
+  status            OSStatus  @default(OPEN)
+  piecesUsed        String?
+  formattingDone    Boolean   @default(false)
+  openingDate       DateTime  @default(now())
+  closingDate       DateTime?
+  technicians       TechnicianSO[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model TechnicianSO {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  serviceOrderId  String
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+}
+
+// --- Módulo: Segurança da Informação ---
+model SecurityIncident {
+  id                String              @id @default(uuid())
+  type              String
+  systemAffected    String
+  criticality       IncidentCriticality @default(MEDIUM)
+  impact            String
+  analysisResponsibleId String
+  analysisResponsible User            @relation("AnalysisResponsible", fields: [analysisResponsibleId], references: [id])
+  correctiveMeasures String?
+  status            String
+  detectionDate     DateTime            @default(now())
+  resolutionDate    DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Vulnerability {
+  id          String   @id @default(uuid())
+  description String
+  criticality IncidentCriticality
+  actionPlan  String?
+  status      String
+  createdAt   DateTime @default(now())
+}
+
+model Policy {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// --- Módulo: Governança de TI ---
+model Contract {
+  id            String   @id @default(uuid())
+  name          String
+  provider      String
+  termStart     DateTime
+  termEnd       DateTime
+  value         Float
+  responsibleId String
+  responsible   User     @relation(fields: [responsibleId], references: [id])
+  status        String
+  costCenter    String
+  slaMetrics    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      String
+  budget      Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// --- Módulo: Infraestrutura ---
+model Server {
+  id               String       @id @default(uuid())
+  hostname         String       @unique
+  ip               String       @unique
+  os               String
+  physicalLocation String
+  responsible      String
+  lastMaintenance  DateTime?
+  status           ServerStatus @default(ONLINE)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  downtimes        Downtime[]
+}
+
+model Downtime {
+  id       String    @id @default(uuid())
+  serverId String
+  server   Server    @relation(fields: [serverId], references: [id])
+  start    DateTime
+  end      DateTime?
+  reason   String?
+}
+
+model NetworkAsset {
+  id       String @id @default(uuid())
+  name     String
+  type     String // Switch, Router, Firewall
+  host     String?
+  location String?
+}
+
+// --- Sistema: Logs e Notificações ---
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  timestamp DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
