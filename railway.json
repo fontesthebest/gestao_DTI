@@ -4,7 +4,7 @@
         "builder": "NIXPACKS"
     },
     "deploy": {
-        "startCommand": "cd backend && npm run build && npm run migrate:prod && npm start",
+        "startCommand": "cd backend && npm run build && npm run migrate:prod && npx prisma db seed && npm start",
         "restartPolicyType": "ON_FAILURE"
     }
 }
