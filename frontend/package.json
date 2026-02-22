@@ -9,7 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron": "wait-on http://localhost:5173 && electron .",
+    "electron": "wait-on http://localhost:5180 && electron .",
     "start": "concurrently \"npm run dev\" \"npm run electron\"",
     "electron:build": "npm run build && npx electron-builder"
   },

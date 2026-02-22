@@ -15,12 +15,12 @@ function createWindow() {
     });
 
     win.loadURL(
-        isDev
-            ? 'http://localhost:5173'
+        !app.isPackaged
+            ? 'http://localhost:5180'
             : `file://${path.join(__dirname, '../dist/index.html')}`
     );
 
-    if (isDev) {
+    if (!app.isPackaged) {
         win.webContents.openDevTools();
     }
 }
