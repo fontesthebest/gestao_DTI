@@ -7,7 +7,7 @@
         ]
     },
     "deploy": {
-        "startCommand": "cd backend && npm run migrate:prod && npm start",
+        "startCommand": "cd backend && npx prisma generate && npx prisma migrate deploy && npm start",
         "restartPolicyType": "ON_FAILURE"
     }
 }
