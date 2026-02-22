@@ -1,22 +1,89 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, CheckCircle, Truck, Trash2, X } from 'lucide-react';
 import client from '../api/client';
 
 const Bancada = () => {
     const [etList, setEtList] = useState([]);
     const [search, setSearch] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
+    // Form states
+    const [etNumber, setEtNumber] = useState('');
+    const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
+    const [reportedDefect, setReportedDefect] = useState('');
+
+    const fetchETs = () => {
         client.get('/bancada/et')
             .then(res => setEtList(res.data))
             .catch(err => console.error(err));
+    };
+
+    useEffect(() => {
+        fetchETs();
     }, []);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await client.post('/bancada/et', {
+                etNumber,
+                entryDate,
+                reportedDefect
+            });
+            setIsModalOpen(false);
+            setEtNumber('');
+            setReportedDefect('');
+            fetchETs();
+        } catch (err) {
+            alert('Erro ao salvar ET: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConcluir = async (id) => {
+        if (!window.confirm('Confirmar conclusão do reparo?')) return;
+        try {
+            await client.put(`/bancada/et/${id}`, {
+                status: 'FINISHED',
+                repairDate: new Date()
+            });
+            fetchETs();
+        } catch (err) {
+            alert('Erro ao concluir reparo: ' + err.message);
+        }
+    };
+
+    const handleEntregar = async (id) => {
+        if (!window.confirm('Confirmar entrega/saída da estação?')) return;
+        try {
+            await client.put(`/bancada/et/${id}`, {
+                exitDate: new Date()
+            });
+            fetchETs();
+        } catch (err) {
+            alert('Erro ao registrar saída: ' + err.message);
+        }
+    };
+
+    const handleExcluir = async (id) => {
+        if (!window.confirm('Deseja realmente excluir este registro?')) return;
+        try {
+            // Assumindo que criaremos a rota DELETE no backend
+            await client.delete(`/bancada/et/${id}`);
+            fetchETs();
+        } catch (err) {
+            alert('Erro ao excluir: ' + err.message);
+        }
+    };
 
     const getStatusBadge = (status) => {
         switch (status) {
             case 'OPEN': return <span className="badge badge-open">ABERTA</span>;
             case 'IN_PROGRESS': return <span className="badge badge-progress">EM ANDAMENTO</span>;
-            case 'FINISHED': return <span className="badge badge-done">FINALIZADA</span>;
+            case 'FINISHED': return <span className="badge badge-done">REPARADA</span>;
             default: return <span className="badge">{status}</span>;
         }
     };
@@ -27,10 +94,10 @@ const Bancada = () => {
     };
 
     return (
-        <div>
+        <div style={{ position: 'relative', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h1>Estações de Trabalho (ET)</h1>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center' }}>
+                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center' }} onClick={() => setIsModalOpen(true)}>
                     <Plus size={18} style={{ marginRight: '8px' }} /> Nova ET
                 </button>
             </div>
@@ -46,9 +113,6 @@ const Bancada = () => {
                         style={{ width: '100%', paddingLeft: '40px' }}
                     />
                 </div>
-                <button style={{ background: 'var(--surface)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center' }}>
-                    <Filter size={18} style={{ marginRight: '8px' }} /> Filtros
-                </button>
             </div>
 
             <div className="table-container">
@@ -60,7 +124,7 @@ const Bancada = () => {
                             <th>Conclusão Reparo</th>
                             <th>Data de Saída</th>
                             <th>Status</th>
-                            <th>Ações</th>
+                            <th style={{ textAlign: 'center' }}>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,18 +136,98 @@ const Bancada = () => {
                                 <td>{formatDate(et.exitDate)}</td>
                                 <td>{getStatusBadge(et.status)}</td>
                                 <td>
-                                    <button style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Ver Detalhes</button>
+                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                        {!et.repairDate && (
+                                            <button
+                                                onClick={() => handleConcluir(et.id)}
+                                                style={{ background: 'var(--accent)', color: 'white', padding: '6px' }}
+                                                title="Concluir Reparo"
+                                            >
+                                                <CheckCircle size={16} />
+                                            </button>
+                                        )}
+                                        {et.repairDate && !et.exitDate && (
+                                            <button
+                                                onClick={() => handleEntregar(et.id)}
+                                                style={{ background: 'var(--info)', color: 'white', padding: '6px' }}
+                                                title="Entregar/Saída"
+                                            >
+                                                <Truck size={16} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => handleExcluir(et.id)}
+                                            style={{ background: 'var(--danger)', color: 'white', padding: '6px' }}
+                                            title="Excluir"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
-                        {etList.length === 0 && (
-                            <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma Estação de Trabalho encontrada</td>
-                            </tr>
-                        )}
                     </tbody>
                 </table>
             </div>
+
+            {/* Modal de Cadastro */}
+            {isModalOpen && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                    zIndex: 1000, backdropFilter: 'blur(4px)'
+                }}>
+                    <div className="glass animate-fade" style={{ width: '450px', padding: '30px', position: 'relative' }}>
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', color: 'var(--text-muted)' }}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <h2 style={{ marginBottom: '24px' }}>Cadastrar Nova ET</h2>
+
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px' }}>Número da ET</label>
+                                <input
+                                    type="text"
+                                    style={{ width: '100%' }}
+                                    placeholder="Ex: ET-2024-001"
+                                    value={etNumber}
+                                    onChange={(e) => setEtNumber(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px' }}>Data de Entrada</label>
+                                <input
+                                    type="date"
+                                    style={{ width: '100%' }}
+                                    value={entryDate}
+                                    onChange={(e) => setEntryDate(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px' }}>Defeito / Observação</label>
+                                <textarea
+                                    style={{ width: '100%', minHeight: '100px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'white', padding: '10px' }}
+                                    placeholder="Descreva o problema..."
+                                    value={reportedDefect}
+                                    onChange={(e) => setReportedDefect(e.target.value)}
+                                />
+                            </div>
+
+                            <button type="submit" className="btn-primary" style={{ width: '100%', padding: '12px' }} disabled={loading}>
+                                {loading ? 'Salvando...' : 'Cadastrar Estação'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

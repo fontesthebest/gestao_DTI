@@ -72,8 +72,8 @@ const updateET = async (req, res) => {
             data: {
                 status,
                 reportedDefect,
-                repairDate: repairDate ? new Date(repairDate) : null,
-                exitDate: exitDate ? new Date(exitDate) : null,
+                repairDate: repairDate ? new Date(repairDate) : undefined,
+                exitDate: exitDate ? new Date(exitDate) : undefined,
                 appliedSolution
             }
         });
@@ -90,6 +90,24 @@ const updateET = async (req, res) => {
         res.json(et);
     } catch (error) {
         res.status(500).json({ message: 'Error updating ET record', error: error.message });
+    }
+};
+
+const deleteET = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Primeiro deletar as relações com técnicos (TechnicianET)
+        await prisma.technicianET.deleteMany({
+            where: { etId: id }
+        });
+
+        await prisma.eT.delete({
+            where: { id }
+        });
+
+        res.json({ message: 'ET Deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting ET', error: error.message });
     }
 };
 
@@ -113,5 +131,6 @@ module.exports = {
     getEquipments,
     createET,
     updateET,
+    deleteET,
     getETList
 };
