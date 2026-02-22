@@ -17,7 +17,7 @@ function createWindow() {
     win.loadURL(
         !app.isPackaged
             ? 'http://localhost:5180'
-            : `file://${path.join(__dirname, '../dist/index.html')}`
+            : `file://${path.join(__dirname, 'dist/index.html')}`
     );
 
     if (!app.isPackaged) {

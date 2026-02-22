@@ -20,8 +20,15 @@
       "output": "dist-electron"
     },
     "win": {
-      "target": "portable"
-    }
+      "target": "nsis"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-main.cjs",
+      "public/**/*",
+      "package.json"
+    ],
+    "asar": true
   },
   "dependencies": {
     "axios": "^1.13.5",
