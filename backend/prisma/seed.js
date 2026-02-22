@@ -20,15 +20,13 @@ async function main() {
 
     console.log({ admin });
 
-    // Add dummy data for demonstration
-    const eq = await prisma.equipment.upsert({
-        where: { patrimony: 'TI-001' },
-        update: {},
-        create: {
-            patrimony: 'TI-001',
-            userResponsible: 'João Silva',
-            type: 'Notebook Dell Latitude',
-            status: 'EM USO'
+    // Seed data for ETs
+    await prisma.eT.create({
+        data: {
+            etNumber: 'ET-FIN-001',
+            entryDate: new Date(),
+            reportedDefect: 'Não liga',
+            status: 'OPEN'
         }
     });
 
@@ -42,19 +40,6 @@ async function main() {
             physicalLocation: 'Datacenter A',
             responsible: 'Equipe Infra',
             status: 'ONLINE'
-        }
-    });
-
-    await prisma.server.upsert({
-        where: { hostname: 'SRV-TEST-WEB' },
-        update: {},
-        create: {
-            hostname: 'SRV-TEST-WEB',
-            ip: '192.168.1.60',
-            os: 'Windows Server 2022',
-            physicalLocation: 'Escritório Central',
-            responsible: 'Analista Teste',
-            status: 'MAINTENANCE'
         }
     });
 }

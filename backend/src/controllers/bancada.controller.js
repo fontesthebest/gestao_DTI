@@ -1,11 +1,17 @@
 const prisma = require('../config/prisma');
 
-// --- Equipment ---
+// --- Equipment (Keep for asset management) ---
 const createEquipment = async (req, res) => {
     const { patrimony, userResponsible, type, status, warrantyUntil } = req.body;
     try {
         const equipment = await prisma.equipment.create({
-            data: { patrimony, userResponsible, type, status, warrantyUntil: warrantyUntil ? new Date(warrantyUntil) : null }
+            data: {
+                patrimony,
+                userResponsible,
+                type,
+                status,
+                warrantyUntil: warrantyUntil ? new Date(warrantyUntil) : null
+            }
         });
         res.status(201).json(equipment);
     } catch (error) {
@@ -16,7 +22,7 @@ const createEquipment = async (req, res) => {
 const getEquipments = async (req, res) => {
     try {
         const equipments = await prisma.equipment.findMany({
-            include: { serviceOrders: true, images: true }
+            include: { workstations: true, images: true }
         });
         res.json(equipments);
     } catch (error) {
@@ -24,13 +30,15 @@ const getEquipments = async (req, res) => {
     }
 };
 
-// --- Service Orders ---
-const createOS = async (req, res) => {
-    const { equipmentId, reportedDefect, technicianIds } = req.body;
+// --- Estação de Trabalho (ET) - Substituindo OS ---
+const createET = async (req, res) => {
+    const { etNumber, equipmentId, entryDate, reportedDefect, technicianIds } = req.body;
     try {
-        const os = await prisma.serviceOrder.create({
+        const et = await prisma.eT.create({
             data: {
+                etNumber,
                 equipmentId,
+                entryDate: entryDate ? new Date(entryDate) : new Date(),
                 reportedDefect,
                 status: 'OPEN',
                 technicians: {
@@ -40,59 +48,70 @@ const createOS = async (req, res) => {
             include: { technicians: { include: { user: true } } }
         });
 
-        // Logging
+        // AuditLog
         await prisma.auditLog.create({
-            data: { userId: req.user.id, action: 'OS_CREATED', details: `OS ${os.id} created for equipment ${equipmentId}` }
-        });
-
-        res.status(201).json(os);
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating OS', error: error.message });
-    }
-};
-
-const updateOS = async (req, res) => {
-    const { id } = req.params;
-    const { status, technicalDiagnosis, appliedSolution, piecesUsed, formattingDone, closingDate } = req.body;
-    try {
-        const os = await prisma.serviceOrder.update({
-            where: { id },
             data: {
-                status,
-                technicalDiagnosis,
-                appliedSolution,
-                piecesUsed,
-                formattingDone,
-                closingDate: closingDate ? new Date(closingDate) : (status === 'FINISHED' ? new Date() : null)
+                userId: req.user.id,
+                action: 'ET_CREATED',
+                details: `ET ${etNumber} record created`
             }
         });
 
-        // Logging
-        await prisma.auditLog.create({
-            data: { userId: req.user.id, action: 'OS_UPDATED', details: `OS ${id} status changed to ${status}` }
-        });
-
-        res.json(os);
+        res.status(201).json(et);
     } catch (error) {
-        res.status(500).json({ message: 'Error updating OS', error: error.message });
+        res.status(500).json({ message: 'Error creating ET record', error: error.message });
     }
 };
 
-const getOSList = async (req, res) => {
+const updateET = async (req, res) => {
+    const { id } = req.params;
+    const { status, repairDate, exitDate, appliedSolution, reportedDefect } = req.body;
     try {
-        const osList = await prisma.serviceOrder.findMany({
-            include: { equipment: true, technicians: { include: { user: true } } }
+        const et = await prisma.eT.update({
+            where: { id },
+            data: {
+                status,
+                reportedDefect,
+                repairDate: repairDate ? new Date(repairDate) : null,
+                exitDate: exitDate ? new Date(exitDate) : null,
+                appliedSolution
+            }
         });
-        res.json(osList);
+
+        // AuditLog
+        await prisma.auditLog.create({
+            data: {
+                userId: req.user.id,
+                action: 'ET_UPDATED',
+                details: `ET ${id} updated, status: ${status}`
+            }
+        });
+
+        res.json(et);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching OS list', error: error.message });
+        res.status(500).json({ message: 'Error updating ET record', error: error.message });
+    }
+};
+
+const getETList = async (req, res) => {
+    try {
+        const etList = await prisma.eT.findMany({
+            include: {
+                equipment: true,
+                technicians: { include: { user: true } }
+            },
+            orderBy: { entryDate: 'desc' }
+        });
+        res.json(etList);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching ET list', error: error.message });
     }
 };
 
 module.exports = {
     createEquipment,
     getEquipments,
-    createOS,
-    updateOS,
-    getOSList
+    createET,
+    updateET,
+    getETList
 };

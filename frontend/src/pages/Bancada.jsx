@@ -3,12 +3,12 @@ import { Plus, Search, Filter } from 'lucide-react';
 import client from '../api/client';
 
 const Bancada = () => {
-    const [osList, setOsList] = useState([]);
+    const [etList, setEtList] = useState([]);
     const [search, setSearch] = useState('');
 
     useEffect(() => {
-        client.get('/bancada/os')
-            .then(res => setOsList(res.data))
+        client.get('/bancada/et')
+            .then(res => setEtList(res.data))
             .catch(err => console.error(err));
     }, []);
 
@@ -21,12 +21,17 @@ const Bancada = () => {
         }
     };
 
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString('pt-BR');
+    };
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h1>Equipe de Bancada</h1>
+                <h1>Estações de Trabalho (ET)</h1>
                 <button className="btn-primary" style={{ display: 'flex', alignItems: 'center' }}>
-                    <Plus size={18} style={{ marginRight: '8px' }} /> Nova OS
+                    <Plus size={18} style={{ marginRight: '8px' }} /> Nova ET
                 </button>
             </div>
 
@@ -35,7 +40,7 @@ const Bancada = () => {
                     <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
                         type="text"
-                        placeholder="Buscar por patrimônio, defeito..."
+                        placeholder="Buscar por número da ET..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         style={{ width: '100%', paddingLeft: '40px' }}
@@ -50,33 +55,30 @@ const Bancada = () => {
                 <table>
                     <thead>
                         <tr>
-                            <th>ID / Data</th>
-                            <th>Patrimônio</th>
-                            <th>Equipamento</th>
-                            <th>Defeito</th>
+                            <th>Data Entrada</th>
+                            <th>ID da ET</th>
+                            <th>Conclusão Reparo</th>
+                            <th>Data de Saída</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {osList.map(os => (
-                            <tr key={os.id}>
-                                <td>
-                                    <div style={{ fontSize: '0.85rem' }}>{os.id.substring(0, 8)}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(os.createdAt).toLocaleDateString()}</div>
-                                </td>
-                                <td>{os.equipment.patrimony}</td>
-                                <td>{os.equipment.type}</td>
-                                <td>{os.reportedDefect}</td>
-                                <td>{getStatusBadge(os.status)}</td>
+                        {etList.map(et => (
+                            <tr key={et.id}>
+                                <td>{formatDate(et.entryDate)}</td>
+                                <td style={{ fontWeight: 600 }}>{et.etNumber}</td>
+                                <td>{formatDate(et.repairDate)}</td>
+                                <td>{formatDate(et.exitDate)}</td>
+                                <td>{getStatusBadge(et.status)}</td>
                                 <td>
                                     <button style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Ver Detalhes</button>
                                 </td>
                             </tr>
                         ))}
-                        {osList.length === 0 && (
+                        {etList.length === 0 && (
                             <tr>
-                                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma ordem de serviço encontrada</td>
+                                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma Estação de Trabalho encontrada</td>
                             </tr>
                         )}
                     </tbody>

@@ -45,7 +45,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  serviceOrders TechnicianSO[]
+  workstations TechnicianET[]
   incidents      SecurityIncident[] @relation("AnalysisResponsible")
   contracts      Contract[]
   auditLogs      AuditLog[]
@@ -60,7 +60,7 @@ model Equipment {
   type            String
   status          String
   warrantyUntil   DateTime?
-  serviceOrders   ServiceOrder[]
+  workstations    ET[]           // Alterado de serviceOrders
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   images          EquipmentImage[]
@@ -73,29 +73,28 @@ model EquipmentImage {
   equipment   Equipment @relation(fields: [equipmentId], references: [id])
 }
 
-model ServiceOrder {
-  id                String    @id @default(uuid())
-  equipmentId       String
-  equipment         Equipment @relation(fields: [equipmentId], references: [id])
-  reportedDefect    String
-  technicalDiagnosis String?
-  appliedSolution   String?
-  status            OSStatus  @default(OPEN)
-  piecesUsed        String?
-  formattingDone    Boolean   @default(false)
-  openingDate       DateTime  @default(now())
-  closingDate       DateTime?
-  technicians       TechnicianSO[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+model ET {
+  id                  String    @id @default(uuid())
+  etNumber            String    // Numero da ET
+  equipmentId         String?
+  equipment           Equipment? @relation(fields: [equipmentId], references: [id])
+  entryDate           DateTime  @default(now())   // Data de entrada
+  repairDate          DateTime?                   // Data de conclusão de reparo
+  exitDate            DateTime?                   // Data de saída
+  status              OSStatus  @default(OPEN)
+  reportedDefect      String?
+  appliedSolution     String?
+  technicians         TechnicianET[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
-model TechnicianSO {
+model TechnicianET {
   id              String       @id @default(uuid())
   userId          String
   user            User         @relation(fields: [userId], references: [id])
-  serviceOrderId  String
-  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  etId            String
+  workstation     ET           @relation(fields: [etId], references: [id])
 }
 
 // --- Módulo: Segurança da Informação ---

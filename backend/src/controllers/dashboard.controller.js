@@ -2,7 +2,7 @@ const prisma = require('../config/prisma');
 
 const getAdminStats = async (req, res) => {
     try {
-        const totalOSOpen = await prisma.serviceOrder.count({ where: { status: 'OPEN' } });
+        const totalETOpen = await prisma.eT.count({ where: { status: 'OPEN' } }); // Substituído de serviceOrder
         const securityIncidentsActive = await prisma.securityIncident.count({ where: { status: { not: 'RESOLVED' } } });
 
         const now = new Date();
@@ -21,7 +21,7 @@ const getAdminStats = async (req, res) => {
         const serversOffline = await prisma.server.count({ where: { status: 'OFFLINE' } });
 
         res.json({
-            totalOSOpen,
+            totalETOpen,
             securityIncidentsActive,
             contractsExpiring,
             serversOffline

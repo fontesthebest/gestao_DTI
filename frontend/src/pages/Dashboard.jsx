@@ -12,7 +12,7 @@ import client from '../api/client';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
-        totalOSOpen: 0,
+        totalETOpen: 0,
         securityIncidentsActive: 0,
         contractsExpiring: 0,
         serversOffline: 0
@@ -25,7 +25,7 @@ const Dashboard = () => {
     }, []);
 
     const chartData = [
-        { name: 'OS Abertas', value: stats.totalOSOpen, color: '#3b82f6' },
+        { name: 'ETs Abertas', value: stats.totalETOpen, color: '#3b82f6' },
         { name: 'Incidentes', value: stats.securityIncidentsActive, color: '#ef4444' },
         { name: 'Contratos/Venc', value: stats.contractsExpiring, color: '#f59e0b' },
         { name: 'Servidores Off', value: stats.serversOffline, color: '#6366f1' },
@@ -38,10 +38,10 @@ const Dashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '40px' }}>
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>OS em Aberto</span>
+                        <span style={{ color: 'var(--text-muted)' }}>ETs em Aberto</span>
                         <Clock size={20} color="var(--info)" />
                     </div>
-                    <div className="stat-value">{stats.totalOSOpen}</div>
+                    <div className="stat-value">{stats.totalETOpen}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Equipe de Bancada</div>
                 </div>
 
