@@ -12,6 +12,7 @@ const securityRoutes = require('./routes/security.routes');
 const governanceRoutes = require('./routes/governance.routes');
 const infraRoutes = require('./routes/infra.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const usersRoutes = require('./routes/users.routes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/security', securityRoutes);
 app.use('/api/governance', governanceRoutes);
 app.use('/api/infra', infraRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/users', usersRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

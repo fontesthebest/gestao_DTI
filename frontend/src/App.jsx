@@ -8,6 +8,7 @@ import Bancada from './pages/Bancada';
 import Security from './pages/Security';
 import Governance from './pages/Governance';
 import Infra from './pages/Infra';
+import Users from './pages/Users';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ function App() {
           <Route path="/security" element={<ProtectedRoute><Security /></ProtectedRoute>} />
           <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
           <Route path="/infra" element={<ProtectedRoute><Infra /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </Router>

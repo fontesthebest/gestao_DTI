@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "electron": "wait-on http://localhost:5180 && electron .",
     "start": "concurrently \"npm run dev\" \"npm run electron\"",
-    "electron:build": "npm run build && npx electron-builder"
+    "electron:build": "npm run build && npx electron-builder",
+    "electron:build:linux": "npm run build && npx electron-builder --linux"
   },
   "build": {
     "appId": "com.antigravity.gestao-dti",
@@ -21,6 +22,13 @@
     },
     "win": {
       "target": "nsis"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
     },
     "files": [
       "dist/**/*",

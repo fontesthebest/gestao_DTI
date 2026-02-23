@@ -6,6 +6,7 @@ import {
     ShieldAlert,
     FileText,
     Server,
+    Users,
     LogOut
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +26,7 @@ const Sidebar = () => {
         { name: 'Segurança', path: '/security', icon: ShieldAlert, roles: ['ADMIN', 'COORDINATOR', 'AUDITOR'] },
         { name: 'Governança', path: '/governance', icon: FileText, roles: ['ADMIN', 'COORDINATOR', 'AUDITOR'] },
         { name: 'Infraestrutura', path: '/infra', icon: Server, roles: ['ADMIN', 'COORDINATOR', 'TECHNICIAN'] },
+        { name: 'Usuários', path: '/users', icon: Users, roles: ['ADMIN'] },
     ];
 
     const filteredMenu = menuItems.filter(item => item.roles.includes(user?.role));
