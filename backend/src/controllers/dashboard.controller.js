@@ -35,6 +35,9 @@ const getAdminStats = async (req, res) => {
 
         const serversOffline = await prisma.server.count({ where: { status: 'OFFLINE' } });
 
+        const totalProjects = await prisma.project.count({ where: { status: { not: 'Concluído' } } });
+        const totalInventory = await prisma.equipment.count();
+
         res.json({
             totalETOpen,
             totalETInProgress,
@@ -42,7 +45,9 @@ const getAdminStats = async (req, res) => {
             totalETFinishedToday,
             securityIncidentsActive,
             contractsExpiring,
-            serversOffline
+            serversOffline,
+            totalProjects,
+            totalInventory
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching stats', error: error.message });

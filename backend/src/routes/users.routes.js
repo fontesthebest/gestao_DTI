@@ -10,7 +10,7 @@ const { authMiddleware, roleMiddleware } = require('../middlewares/auth.middlewa
 const router = express.Router();
 
 router.use(authMiddleware);
-router.use(roleMiddleware(['ADMIN']));
+router.use(roleMiddleware(['ADMIN', 'COORDINATOR']));
 
 router.get('/', getAllUsers);
 router.post('/', createUser);

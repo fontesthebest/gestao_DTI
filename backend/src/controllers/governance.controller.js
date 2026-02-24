@@ -29,4 +29,53 @@ const getContracts = async (req, res) => {
     }
 };
 
-module.exports = { createContract, getContracts };
+const deleteContract = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.contract.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting contract', error: error.message });
+    }
+};
+
+// Projetos
+const createProject = async (req, res) => {
+    const { name, description, status, budget } = req.body;
+    try {
+        const project = await prisma.project.create({
+            data: { name, description, status, budget: budget ? parseFloat(budget) : null }
+        });
+        res.status(201).json(project);
+    } catch (error) {
+        res.status(500).json({ message: 'Error creating project', error: error.message });
+    }
+};
+
+const getProjects = async (req, res) => {
+    try {
+        const projects = await prisma.project.findMany();
+        res.json(projects);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching projects', error: error.message });
+    }
+};
+
+const deleteProject = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.project.delete({ where: { id } });
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting project', error: error.message });
+    }
+};
+
+module.exports = {
+    createContract,
+    getContracts,
+    deleteContract,
+    createProject,
+    getProjects,
+    deleteProject
+};
