@@ -17,7 +17,10 @@ const usersRoutes = require('./routes/users.routes');
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Desabilita o CSP restrito para permitir o funcionamento no navegador
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
@@ -40,6 +43,22 @@ app.use('/api/governance', governanceRoutes);
 app.use('/api/infra', infraRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', usersRoutes);
+
+// Servir arquivos estáticos do Frontend
+const frontendPath = path.resolve(__dirname, '../../frontend/dist');
+app.use(express.static(frontendPath));
+
+// Rota curinga para SPA (deve vir por último)
+app.get('*', (req, res) => {
+  // Se não for uma rota de API ou Uploads, envia o index.html
+  if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+      if (err) {
+        res.status(404).send('Frontend não encontrado. Certifique-se de rodar npm run build no frontend.');
+      }
+    });
+  }
+});
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
