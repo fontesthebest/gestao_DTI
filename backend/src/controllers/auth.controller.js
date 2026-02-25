@@ -49,6 +49,13 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+        return res.status(500).json({ message: 'JWT_SECRET não configurado' });
+    }
 
     try {
         const user = await prisma.user.findUnique({ where: { email } });
@@ -66,6 +73,9 @@ const login = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '1d' }
         );
+        if (!token) {
+            return res.status(500).json({ message: 'Error generating token' });
+        }
 
         // Auditoria
         await prisma.auditLog.create({

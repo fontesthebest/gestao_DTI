@@ -19,6 +19,9 @@ const Dashboard = () => {
         totalProjects: 0,
         totalInventory: 0
     });
+    const navigate = (href) => {
+        if (href) window.location.href = href;
+    }
 
     useEffect(() => {
         client.get('/dashboard/stats')
@@ -34,11 +37,11 @@ const Dashboard = () => {
     ];
 
     const summaryCards = [
-        { title: 'Inventário Total', value: stats.totalInventory, icon: Database, color: '#3b82f6', sub: 'Ativos mapeados' },
-        { title: 'Projetos Ativos', value: stats.totalProjects, icon: Briefcase, color: '#8b5cf6', sub: 'Em andamento' },
-        { title: 'Segurança', value: stats.securityIncidentsActive, icon: ShieldAlert, color: '#ef4444', sub: 'Alertas críticos' },
-        { title: 'Infraestrutura', value: stats.serversOffline, icon: Server, color: '#f59e0b', sub: 'Servidores down' },
-        { title: 'Contratos', value: stats.contractsExpiring, icon: FileText, color: '#10b981', sub: 'Vencendo logo' },
+        { title: 'Inventário Total', value: stats.totalInventory, icon: Database, color: '#3b82f6', sub: 'Ativos mapeados', href: '/' },
+        { title: 'Projetos Ativos', value: stats.totalProjects, icon: Briefcase, color: '#8b5cf6', sub: 'Em andamento', href: '#/governance' },
+        { title: 'Segurança', value: stats.securityIncidentsActive, icon: ShieldAlert, color: '#ef4444', sub: 'Alertas críticos' , href: '#/security' },
+        { title: 'Infraestrutura', value: stats.serversOffline, icon: Server, color: '#f59e0b', sub: 'Servidores down' , href: '#/infra' },
+        { title: 'Contratos', value: stats.contractsExpiring, icon: FileText, color: '#10b981', sub: 'Vencendo logo' , href: '#/governance' },
     ];
 
     return (
@@ -56,7 +59,7 @@ const Dashboard = () => {
                 marginBottom: '40px'
             }}>
                 {summaryCards.map((card, idx) => (
-                    <div key={idx} className="card glass-card hover-lift" style={{ borderLeft: `4px solid ${card.color}` }}>
+                    <div key={idx} className="card glass-card hover-lift" style={{ borderLeft: `4px solid ${card.color}` }} onClick={() => navigate(card.href)}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>{card.title}</p>
