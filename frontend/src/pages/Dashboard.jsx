@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import {
-    AlertCircle, CheckCircle, Clock, Server, HardDrive, Wrench, Package, ShieldAlert, FileText, Briefcase, Database, Activity
+    CheckCircle, Server, ShieldAlert, FileText, Briefcase, Database, Activity
 } from 'lucide-react';
 import client from '../api/client';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
         totalETOpen: 0,
-        totalETInProgress: 0,
+        totalETToGetOut: 0,
         totalETWaitingParts: 0,
         totalETFinishedToday: 0,
         securityIncidentsActive: 0,
@@ -31,8 +31,8 @@ const Dashboard = () => {
 
     const chartData = [
         { name: 'Abertas', value: stats.totalETOpen, color: '#3b82f6' },
-        { name: 'Em Reparo', value: stats.totalETInProgress, color: '#8b5cf6' },
-        { name: 'Peças', value: stats.totalETWaitingParts, color: '#f59e0b' },
+        { name: 'Para Retirada', value: stats.totalETFinishedToday, color: '#8b5cf6' },
+        { name: 'Aguardando Peças', value: stats.totalETWaitingParts, color: '#f59e0b' },
         { name: 'Incidentes', value: stats.securityIncidentsActive, color: '#ef4444' },
     ];
 
@@ -86,16 +86,16 @@ const Dashboard = () => {
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Aguardando</div>
                         </div>
                         <div style={{ textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-                            <div style={{ color: '#8b5cf6', fontSize: '1.5rem', fontWeight: '700' }}>{stats.totalETInProgress}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Em Reparo</div>
+                            <div style={{ color: '#8b5cf6', fontSize: '1.5rem', fontWeight: '700' }}>{stats.totalETFinishedToday}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Para Retirada</div>
                         </div>
                         <div style={{ textAlign: 'center', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
                             <div style={{ color: '#f59e0b', fontSize: '1.5rem', fontWeight: '700' }}>{stats.totalETWaitingParts}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Peças</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Aguardando Peças</div>
                         </div>
                         <div style={{ textAlign: 'center', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px' }}>
-                            <div style={{ color: '#10b981', fontSize: '1.5rem', fontWeight: '700' }}>{stats.totalETFinishedToday}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#10b981' }}>Hoje</div>
+                            <div style={{ color: '#10b981', fontSize: '1.5rem', fontWeight: '700' }}>{stats.totalETToGetOut}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#10b981' }}>Saída Hoje</div>
                         </div>
                     </div>
 

@@ -2,12 +2,14 @@ const prisma = require('../config/prisma');
 
 const getAdminStats = async (req, res) => {
     try {
-        const totalETOpen = await prisma.eT.count({ where: { status: 'OPEN' } });
-        const totalETInProgress = await prisma.eT.count({ where: { status: 'IN_PROGRESS' } });
-        const totalETWaitingParts = await prisma.eT.count({ where: { status: 'WAITING_PARTS' } });
-
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        console.log('Calculating dashboard stats for date:', today.toISOString());
+        const totalETOpen = await prisma.eT.count({ where: { status: 'OPEN' } });
+        const totalETToGetOut = await prisma.eT.count({ where: { repairDate: { not: null } } });
+        const totalETWaitingParts = await prisma.eT.count({ where: { status: 'WAITING_PARTS' } });
+
+        
 
         const totalETFinishedToday = await prisma.eT.count({
             where: {
@@ -40,7 +42,7 @@ const getAdminStats = async (req, res) => {
 
         res.json({
             totalETOpen,
-            totalETInProgress,
+            totalETToGetOut,
             totalETWaitingParts,
             totalETFinishedToday,
             securityIncidentsActive,

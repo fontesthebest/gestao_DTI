@@ -1,17 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Filter, CheckCircle, Truck, Trash2, X } from 'lucide-react';
+import { Plus, Search, Filter, CheckCircle, Truck, Trash2, X,Ellipsis,Cog } from 'lucide-react';
 import client from '../api/client';
 
 const Bancada = () => {
     const [etList, setEtList] = useState([]);
     const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [openActionId, setOpenActionId] = useState(null);
     const [loading, setLoading] = useState(false);
 
     // Form states
     const [etNumber, setEtNumber] = useState('');
     const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
     const [reportedDefect, setReportedDefect] = useState('');
+
+    // Confirm Modal State
+    const [confirmModal, setConfirmModal] = useState({
+        open: false,
+        title: '',
+        message: '',
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar',
+        loading: false,
+        onConfirm: null,
+    });
 
     const fetchETs = () => {
         client.get('/bancada/et')
@@ -43,45 +55,64 @@ const Bancada = () => {
         }
     };
 
-    const handleConcluir = async (id) => {
-        if (!window.confirm('Confirmar conclusão do reparo?')) return;
-        try {
+    const handleConcluir = (id) => {
+        openConfirm({
+            title: 'Concluir reparo',
+            message: 'Confirmar conclusão do reparo?',
+            confirmText: 'Concluir',
+            onConfirm: async () => {
             await client.put(`/bancada/et/${id}`, {
                 status: 'FINISHED',
-                repairDate: new Date()
+                repairDate: new Date(),
             });
             fetchETs();
-        } catch (err) {
-            alert('Erro ao concluir reparo: ' + err.message);
-        }
+            },
+        });
     };
-
-    const handleEntregar = async (id) => {
-        if (!window.confirm('Confirmar entrega/saída da estação?')) return;
-        try {
+    
+    const handleAguardarPecas = (id) => {
+        openConfirm({
+            title: 'Aguardar peças',
+            message: 'Registrar que esta ET está aguardando peças?',
+            confirmText: 'Registrar',
+            onConfirm: async () => {
             await client.put(`/bancada/et/${id}`, {
-                exitDate: new Date()
+                status: 'WAITING_PARTS',
             });
             fetchETs();
-        } catch (err) {
-            alert('Erro ao registrar saída: ' + err.message);
-        }
+            },
+        });
+    }
+    const handleEntregar = (id) => {
+        openConfirm({
+            title: 'Registrar saída',
+            message: 'Confirmar entrega/saída da estação?',
+            confirmText: 'Registrar',
+            onConfirm: async () => {
+            await client.put(`/bancada/et/${id}`, {
+                exitDate: new Date(),
+            });
+            fetchETs();
+            },
+        });
     };
 
-    const handleExcluir = async (id) => {
-        if (!window.confirm('Deseja realmente excluir este registro?')) return;
-        try {
-            // Assumindo que criaremos a rota DELETE no backend
+    const handleExcluir = (id) => {
+        openConfirm({
+            title: 'Excluir registro',
+            message: 'Deseja realmente excluir este registro? Essa ação não pode ser desfeita.',
+            confirmText: 'Excluir',
+            onConfirm: async () => {
             await client.delete(`/bancada/et/${id}`);
             fetchETs();
-        } catch (err) {
-            alert('Erro ao excluir: ' + err.message);
-        }
+            },
+        });
     };
 
     const getStatusBadge = (status) => {
         switch (status) {
             case 'OPEN': return <span className="badge badge-open">ABERTA</span>;
+            case 'WAITING_PARTS': return <span className="badge badge-progress">AGUARDANDO PEÇAS</span>;
             case 'IN_PROGRESS': return <span className="badge badge-progress">EM ANDAMENTO</span>;
             case 'FINISHED': return <span className="badge badge-done">REPARADA</span>;
             default: return <span className="badge">{status}</span>;
@@ -91,6 +122,36 @@ const Bancada = () => {
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('pt-BR');
+    };
+
+    const openConfirm = ({ title, message, confirmText = 'Confirmar', cancelText = 'Cancelar', onConfirm }) => {
+        setConfirmModal({
+            open: true,
+            title,
+            message,
+            confirmText,
+            cancelText,
+            loading: false,
+            onConfirm,
+        });
+    };
+
+    const closeConfirm = () => {
+        setConfirmModal((prev) => ({ ...prev, open: false, loading: false, onConfirm: null }));
+    };
+
+    const handleConfirmYes = async () => {
+        if (!confirmModal.onConfirm) return;
+
+        setConfirmModal((prev) => ({ ...prev, loading: true }));
+        try {
+            await confirmModal.onConfirm();
+            closeConfirm();
+        } catch (err) {
+            // você pode trocar por toast depois
+            alert('Erro: ' + (err?.message || 'Erro desconhecido'));
+            setConfirmModal((prev) => ({ ...prev, loading: false }));
+        }
     };
 
     return (
@@ -115,7 +176,7 @@ const Bancada = () => {
                 </div>
             </div>
 
-            <div className="table-container">
+            <div className="table-container" style={{ minHeight: "70vh"}}>
                 <table>
                     <thead>
                         <tr>
@@ -135,34 +196,53 @@ const Bancada = () => {
                                 <td>{formatDate(et.repairDate)}</td>
                                 <td>{formatDate(et.exitDate)}</td>
                                 <td>{getStatusBadge(et.status)}</td>
-                                <td>
-                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                                        {!et.repairDate && (
-                                            <button
-                                                onClick={() => handleConcluir(et.id)}
-                                                style={{ background: 'var(--accent)', color: 'white', padding: '6px' }}
-                                                title="Concluir Reparo"
-                                            >
-                                                <CheckCircle size={16} />
-                                            </button>
-                                        )}
-                                        {et.repairDate && !et.exitDate && (
-                                            <button
-                                                onClick={() => handleEntregar(et.id)}
-                                                style={{ background: 'var(--info)', color: 'white', padding: '6px' }}
-                                                title="Entregar/Saída"
-                                            >
-                                                <Truck size={16} />
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => handleExcluir(et.id)}
-                                            style={{ background: 'var(--danger)', color: 'white', padding: '6px' }}
-                                            title="Excluir"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                <td style={{ position: 'relative' }}>
+                                    <div style={{justifyContent: 'center', display: 'flex'}}>
+                                        <Ellipsis onClick={() => 
+                                            setOpenActionId(openActionId === et.id ? null : et.id)
+                                        }  />
                                     </div>
+                                    {openActionId === et.id && (
+                                        <div style={{ position: 'absolute', gap: '8px', justifyContent: 'center', display: 'flex', flexDirection: 'column', right: "2%", top: "5%", background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', zIndex: 10 }}>
+                                            {!et.repairDate && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleConcluir(et.id)}
+                                                        style={{ background: 'var(--accent)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                                        title="Concluir Reparo"
+                                                    >
+                                                        <CheckCircle size={16} />
+                                                    </button>
+                                                    {et.status !== 'WAITING_PARTS' && (
+                                                        <button
+                                                            onClick={() => handleAguardarPecas(et.id)}
+                                                            style={{ background: 'var(--warning)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                                            title="Aguardando Peças"
+                                                        >
+                                                            <Cog size={16} />
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                            {et.repairDate && !et.exitDate && (
+                                                <button
+                                                    onClick={() => handleEntregar(et.id)}
+                                                    style={{ background: 'var(--info)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                                    title="Entregar/Saída"
+                                                >
+                                                    <Truck size={16} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleExcluir(et.id)}
+                                                style={{ background: 'var(--danger)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                                title="Excluir"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    )}
+                                    
                                 </td>
                             </tr>
                         ))}
@@ -225,6 +305,61 @@ const Bancada = () => {
                                 {loading ? 'Salvando...' : 'Cadastrar Estação'}
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+            {confirmModal.open && (
+                <div
+                    style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'rgba(0,0,0,0.8)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 2000,
+                    backdropFilter: 'blur(4px)',
+                    }}
+                    onClick={closeConfirm} // clicar fora fecha
+                >
+                    <div
+                    className="glass animate-fade"
+                    style={{ width: '420px', padding: '24px', position: 'relative' }}
+                    onClick={(e) => e.stopPropagation()} // impede fechar ao clicar dentro
+                    >
+                    <button
+                        onClick={closeConfirm}
+                        style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', color: 'var(--text-muted)' }}
+                        disabled={confirmModal.loading}
+                    >
+                        <X size={20} />
+                    </button>
+
+                    <h2 style={{ marginBottom: '10px' }}>{confirmModal.title}</h2>
+                    <p style={{ marginBottom: '20px', color: 'var(--text-muted)' }}>{confirmModal.message}</p>
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                        <button
+                        onClick={closeConfirm}
+                        className="btn-secondary"
+                        style={{ padding: '10px 14px' }}
+                        disabled={confirmModal.loading}
+                        >
+                        {confirmModal.cancelText}
+                        </button>
+
+                        <button
+                        onClick={handleConfirmYes}
+                        className="btn-primary"
+                        style={{ padding: '10px 14px' }}
+                        disabled={confirmModal.loading}
+                        >
+                        {confirmModal.loading ? 'Processando...' : confirmModal.confirmText}
+                        </button>
+                    </div>
                     </div>
                 </div>
             )}

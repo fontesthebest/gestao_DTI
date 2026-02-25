@@ -2,10 +2,10 @@ const prisma = require('../config/prisma');
 
 // --- Incidents ---
 const createIncident = async (req, res) => {
-    const { type, systemAffected, criticality, impact, analysisResponsibleId, status } = req.body;
+    const { type, systemAffected, criticality, impact, analysisResponsibleId, status, detectionDate } = req.body;
     try {
         const incident = await prisma.securityIncident.create({
-            data: { type, systemAffected, criticality, impact, analysisResponsibleId, status }
+            data: { type, systemAffected, criticality, impact, analysisResponsibleId, status, detectionDate }
         });
         res.status(201).json(incident);
     } catch (error) {
