@@ -113,16 +113,30 @@ const deleteET = async (req, res) => {
 
 const getETList = async (req, res) => {
     try {
+        const { search } = req.query;
+
         const etList = await prisma.eT.findMany({
+            where: search
+                ? {
+                    etNumber: {
+                        contains: search,
+                        mode: 'insensitive' // ignora maiúsc/minúsc
+                    }
+                }
+                : undefined,
             include: {
                 equipment: true,
                 technicians: { include: { user: true } }
             },
             orderBy: { entryDate: 'desc' }
         });
+
         res.json(etList);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching ET list', error: error.message });
+        res.status(500).json({
+            message: 'Error fetching ET list',
+            error: error.message
+        });
     }
 };
 

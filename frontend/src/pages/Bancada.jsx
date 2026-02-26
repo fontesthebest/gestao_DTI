@@ -25,15 +25,15 @@ const Bancada = () => {
         onConfirm: null,
     });
 
-    const fetchETs = () => {
-        client.get('/bancada/et')
+    const fetchETs = (searchTerm) => {
+        client.get(`/bancada/et?search=${searchTerm}`)
             .then(res => setEtList(res.data))
             .catch(err => console.error(err));
     };
 
     useEffect(() => {
-        fetchETs();
-    }, []);
+        fetchETs(search);
+    }, [search]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

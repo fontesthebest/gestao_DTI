@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, X } from 'lucide-react';
+import { Shield, X, CheckCircle, Truck, Trash2, Ellipsis,NotebookText } from 'lucide-react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,7 +8,7 @@ const Security = () => {
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [openActionId, setOpenActionId] = useState(null);
 
   // Form states (INCIDENT)
   const [type, setType] = useState('');
@@ -16,6 +16,16 @@ const Security = () => {
   const [criticality, setCriticality] = useState('LOW'); // LOW | MEDIUM | HIGH | CRITICAL
   const [impact, setImpact] = useState('');
   const [status, setStatus] = useState('OPEN'); // OPEN | IN_PROGRESS | RESOLVED
+
+  // Form states (RESOLUTION)
+  const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
+  const [resolveLoading, setResolveLoading] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [correctiveMeasures, setCorrectiveMeasures] = useState('');
+
+  // Report modal states
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportIncident, setReportIncident] = useState(null);
 
   const fetchIncidents = async () => {
     try {
@@ -30,6 +40,7 @@ const Security = () => {
     fetchIncidents();
   }, []);
 
+  // Função para resetar os campos do formulário de registro de incidente
   const resetForm = () => {
     setType('');
     setSystemAffected('');
@@ -38,6 +49,7 @@ const Security = () => {
     setStatus('OPEN');
   };
 
+  // Função para lidar com o envio do formulário de registro de incidente
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -61,6 +73,53 @@ const Security = () => {
     }
   };
 
+  // Funções para lidar com a resolução de incidentes
+  const openResolveModal = (inc) => {
+    setSelectedIncident(inc);
+    setCorrectiveMeasures('');
+    setIsResolveModalOpen(true);
+    setOpenActionId(null);
+  };
+
+  const closeResolveModal = () => {
+    if (resolveLoading) return;
+    setIsResolveModalOpen(false);
+    setSelectedIncident(null);
+    setCorrectiveMeasures('');
+  };
+
+  const handleResolveSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedIncident) return;
+
+    setResolveLoading(true);
+    try {
+      await client.put(`/security/incidents/${selectedIncident.id}/resolve`, {
+        correctiveMeasures,              // explicação do que foi feito
+        resolutionDate: new Date(),    // ou o backend seta sozinho
+        status: 'RESOLVED',
+      });
+
+      closeResolveModal();
+      fetchIncidents();
+    } catch (err) {
+      alert('Erro ao concluir incidente: ' + (err?.message || 'Erro desconhecido'));
+    } finally {
+      setResolveLoading(false);
+    }
+  };
+
+  // Funções para lidar com o modal de relatório/entrega
+  const openReportModal = (inc) => {
+    setReportIncident(inc);
+    setIsReportModalOpen(true);
+    setOpenActionId(null);
+  };
+
+  const closeReportModal = () => {
+    setIsReportModalOpen(false);
+    setReportIncident(null);
+  };
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -77,7 +136,7 @@ const Security = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
         <div className="card" style={{ borderLeft: '4px solid var(--danger)' }}> 
             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Ameaças Críticas</div> 
-            <div className="stat-value">{incidents.filter(i => i.criticality === 'CRITICAL').length}</div> 
+            <div className="stat-value">{incidents.filter(i => (i.criticality === 'CRITICAL' && i.resolutionDate === null)).length}</div> 
         </div> 
         <div className="card" style={{ borderLeft: '4px solid var(--warning)' }}> 
             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Vulnerabilidades do Mês</div> 
@@ -88,12 +147,12 @@ const Security = () => {
                     Auditorias OK
                 </div>
                  <div className="stat-value">
-                    4
+                    {incidents.filter(i => i.status === 'RESOLVED').length}
                 </div> 
             </div> 
         </div>
 
-      <div className="table-container">
+      <div className="table-container" style={{ minHeight: "60vh"}}>
         <table>
           <thead>
             <tr>
@@ -102,6 +161,7 @@ const Security = () => {
               <th>Criticidade</th>
               <th>Responsável</th>
               <th>Status</th>
+              <th>Ações</th>
             </tr>
           </thead>
 
@@ -117,6 +177,45 @@ const Security = () => {
                 </td>
                 <td>{inc.analysisResponsible?.name || '-'}</td>
                 <td>{inc.status}</td>
+                <td style={{position: 'relative'}}>
+                  <div style={{justifyContent: 'center', display: 'flex'}}>
+                      <Ellipsis onClick={() => 
+                          setOpenActionId(openActionId === inc.id ? null : inc.id)
+                      }  />
+                  </div>
+                  {openActionId === inc.id && (
+                        <div style={{ position: 'absolute', gap: '8px', justifyContent: 'center', display: 'flex', flexDirection: 'column', right: "2%", top: "5%", background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px', zIndex: 10 }}>
+                            {inc.status === 'OPEN' && (
+                                <>
+                                    <button
+                                        onClick={() => openResolveModal(inc)}
+                                        style={{ background: 'var(--accent)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                        title="Concluir Reparo"
+                                    >
+                                        <CheckCircle size={16} />
+                                    </button>
+                                </>
+                            )}
+                            {inc.resolutionDate && (
+                                <button
+                                    onClick={() => openReportModal(inc)}
+                                    style={{ background: 'var(--info)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                    title="Entregar/Saída"
+                                >
+                                    <NotebookText size={16} />
+                                </button>
+                            )}
+                            <button
+                                
+                                style={{ background: 'var(--danger)', color: 'white', padding: '4px', justifyContent: 'center', display: 'flex' }}
+                                title="Excluir"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    )}
+                                    
+                </td>
               </tr>
             ))}
 
@@ -238,6 +337,184 @@ const Security = () => {
                 {loading ? 'Salvando...' : 'Registrar Incidente'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {isResolveModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1100,
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={closeResolveModal}
+        >
+          <div
+            className="glass animate-fade"
+            style={{ width: '520px', padding: '30px', position: 'relative' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeResolveModal}
+              style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', color: 'var(--text-muted)' }}
+              disabled={resolveLoading}
+            >
+              <X size={20} />
+            </button>
+
+            <h2 style={{ marginBottom: '10px' }}>Concluir Incidente</h2>
+
+            <div style={{ marginBottom: '18px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+              <div><b>Incidente:</b> {selectedIncident?.type}</div>
+              <div><b>Sistema:</b> {selectedIncident?.systemAffected}</div>
+              <div><b>Criticidade:</b> {selectedIncident?.criticality}</div>
+            </div>
+
+            <form onSubmit={handleResolveSubmit}>
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', marginBottom: '8px' }}>
+                  Explique o que foi feito para resolver
+                </label>
+                <textarea
+                  style={{
+                    width: '100%',
+                    minHeight: '130px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    padding: '10px',
+                  }}
+                  placeholder="Ex: Bloqueado IP no firewall, redefinidas credenciais, aplicada correção, varredura antimalware, etc..."
+                  value={correctiveMeasures}
+                  onChange={(e) => setCorrectiveMeasures(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={closeResolveModal}
+                  disabled={resolveLoading}
+                  style={{ padding: '10px 14px' }}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={resolveLoading}
+                  style={{ padding: '10px 14px' }}
+                >
+                  {resolveLoading ? 'Concluindo...' : 'Concluir'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {isReportModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1200,
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={closeReportModal}
+        >
+          <div
+            className="glass animate-fade"
+            style={{ width: '620px', padding: '30px', position: 'relative' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeReportModal}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                background: 'transparent',
+                color: 'var(--text-muted)',
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <h2 style={{ marginBottom: '10px' }}>Relatório do Incidente</h2>
+
+            <div style={{ marginBottom: '18px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+              <div><b>Incidente:</b> {reportIncident?.type}</div>
+              <div><b>Sistema:</b> {reportIncident?.systemAffected}</div>
+              <div><b>Criticidade:</b> {reportIncident?.criticality}</div>
+              <div><b>Status:</b> {reportIncident?.status}</div>
+              <div>
+                <b>Data de detecção:</b>{' '}
+                {reportIncident?.detectionDate ? new Date(reportIncident.detectionDate).toLocaleString('pt-BR') : '-'}
+              </div>
+              <div>
+                <b>Data de resolução:</b>{' '}
+                {reportIncident?.resolutionDate ? new Date(reportIncident.resolutionDate).toLocaleString('pt-BR') : '-'}
+              </div>
+              <div><b>Responsável:</b> {reportIncident?.analysisResponsible?.name || '-'}</div>
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '8px' }}>Impacto</label>
+              <div
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: 'white',
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {reportIncident?.impact || '-'}
+              </div>
+            </div>
+
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px' }}>Solução / Medidas Corretivas</label>
+              <div
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  color: 'white',
+                  whiteSpace: 'pre-wrap',
+                  minHeight: '120px',
+                }}
+              >
+                {reportIncident?.correctiveMeasures || 'Nenhuma medida corretiva registrada.'}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button className="btn-primary" onClick={closeReportModal} style={{ padding: '10px 14px' }}>
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}

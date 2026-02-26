@@ -24,6 +24,23 @@ const getIncidents = async (req, res) => {
     }
 };
 
+const resolveIncident = async (req, res) => {  
+    const { id } = req.params;
+    const { correctiveMeasures, resolutionDate, status } = req.body;
+    if (!correctiveMeasures || !resolutionDate || !status) {
+        return res.status(400).json({ message: 'Missing required fields: correctiveMeasures, resolutionDate, status' });
+    }
+    try {        
+        const incident = await prisma.securityIncident.update({
+            where: { id: id },
+            data: { correctiveMeasures, resolutionDate, status }
+        });
+        res.json(incident);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating incident', error: error.message });
+    }  
+}; 
+
 // --- Vulnerabilities ---
 const createVulnerability = async (req, res) => {
     const { description, criticality, actionPlan, status } = req.body;
@@ -46,4 +63,4 @@ const getVulnerabilities = async (req, res) => {
     }
 };
 
-module.exports = { createIncident, getIncidents, createVulnerability, getVulnerabilities };
+module.exports = { createIncident, getIncidents, createVulnerability, getVulnerabilities, resolveIncident };
