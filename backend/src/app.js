@@ -13,12 +13,19 @@ const governanceRoutes = require('./routes/governance.routes');
 const infraRoutes = require('./routes/infra.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const usersRoutes = require('./routes/users.routes');
+const { checkAll } = require('./services/serverService');
 
 const app = express();
 
+checkAll();
+
+setInterval(async () => {
+  await checkAll();
+}, 30000);
+
 // Security Middlewares
 app.use(helmet({
-  contentSecurityPolicy: false, // Desabilita o CSP restrito para permitir o funcionamento no navegador
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 app.use(cors());
@@ -27,8 +34,8 @@ app.use(morgan('dev'));
 
 // Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100
 });
 app.use('/api/', limiter);
 
@@ -48,16 +55,17 @@ app.use('/api/users', usersRoutes);
 const frontendPath = path.resolve(__dirname, '../../frontend/dist');
 app.use(express.static(frontendPath));
 
-// Rota curinga para SPA (deve vir por último)
-app.get('*', (req, res) => {
-  // Se não for uma rota de API ou Uploads, envia o index.html
+// Rota curinga para SPA
+app.get('/{*path}', (req, res) => {
   if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
-    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+    return res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
       if (err) {
         res.status(404).send('Frontend não encontrado. Certifique-se de rodar npm run build no frontend.');
       }
     });
   }
+
+  return res.status(404).json({ message: 'Rota não encontrada' });
 });
 
 // Error Handling Middleware

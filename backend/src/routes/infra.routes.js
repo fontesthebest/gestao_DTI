@@ -8,6 +8,7 @@ router.use(authMiddleware);
 
 router.post('/servers', roleMiddleware(['ADMIN', 'COORDINATOR']), createServer);
 router.get('/servers', getServers);
+router.get('/servers/status', roleMiddleware(['ADMIN', 'COORDINATOR', 'TECHNICIAN']), getServers);
 router.put('/servers/:id/status', roleMiddleware(['ADMIN', 'COORDINATOR', 'TECHNICIAN']), updateServerStatus);
 
 module.exports = router;

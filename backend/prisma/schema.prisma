@@ -169,6 +169,7 @@ model Server {
   status           ServerStatus @default(ONLINE)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+  failureCount     Int      @default(0)
   downtimes        Downtime[]
 }
 
